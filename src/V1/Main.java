@@ -14,13 +14,12 @@ import javafx.stage.Stage;
 
 public class Main extends Application {
     public static Label labelTriesNumber, labelImprovementsNumber;
-//    public static Slider slider;
 
     @Override
     public void start(Stage primaryStage) {
-        GeneratedImagePane generatedImagePane = new GeneratedImagePane();
-        Image image = new Image("file:mona.png");
-//        Image image = new Image("file:rygb - Copy.png");
+        String imageFile = "file:mona.png";
+        GeneratedImagePane generatedImagePane = new GeneratedImagePane(imageFile);
+        Image image = new Image(imageFile);
         ImageView imageView = new ImageView(image);
         HBox hBoxImages = new HBox(generatedImagePane, imageView);
 
@@ -119,5 +118,4 @@ public class Main extends Application {
     public static void main(String[] args) {
         launch(args);
     }
-
 }

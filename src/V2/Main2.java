@@ -20,9 +20,9 @@ public class Main2 extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        GeneratedImagePane2 generatedImagePane = new GeneratedImagePane2();
-        Image image = new Image("file:mona.png");
-//        Image image = new Image("file:rygb - Copy.png");
+        String imageFile = "file:mona.png";
+        GeneratedImagePane2 generatedImagePane = new GeneratedImagePane2(imageFile);
+        Image image = new Image(imageFile);
         ImageView imageView = new ImageView(image);
         HBox hBoxImages = new HBox(generatedImagePane, imageView);
 

@@ -5,7 +5,6 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.collections.ObservableList;
 import javafx.embed.swing.SwingFXUtils;
-import javafx.scene.Node;
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelReader;
 import javafx.scene.image.WritableImage;
@@ -22,22 +21,22 @@ import java.util.Random;
 
 public class GeneratedImagePane2 extends Pane {
     private PixelReader pixelReaderOriginalImage;
-    private int numberOfPixels = 200 * 200; // mona.png is 200 * 200 pixels
+    private int imageWidth;
+    private int imageHeight;
+    private int numberOfPixels;
     private double previousAverageDifference = 3; // R, G & B each have a value between 0 and 1. Therefore the max difference is 3. This can be tested by comparing black (R, G & B = 0) and white (R, G & B = 1)
     private Timeline timeline;
-    private Random random = new Random();
+    private final Random random = new Random();
     private int tries, improvements;
-    private ObservableList<Node> children = getChildren();
     private int numberOfPolygons = 50; // Total number of polygons
     private int polygonSides = 6; // How many sides each polygon will have
     private int polygonTotalPoints = polygonSides * 2; // How many points a polygon is made up of
 
-    public GeneratedImagePane2() {
-        setPrefWidth(200);
-        setPrefHeight(200);
-
-        loadPixelReader();
-        addPolygons();
+    public GeneratedImagePane2(String imageFile) {
+        loadImageAndPixelReader(imageFile);
+        setPrefWidth(imageWidth);
+        setPrefHeight(imageHeight);
+        runSetup();
 
         timeline = new Timeline(new KeyFrame(Duration.millis(5), event -> mutate()));
         timeline.setCycleCount(Timeline.INDEFINITE);
@@ -45,16 +44,26 @@ public class GeneratedImagePane2 extends Pane {
 
     public void setNumberOfPolygons(int numberOfPolygons) {
         this.numberOfPolygons = numberOfPolygons;
+        runSetup();
     }
 
     public void setPolygonSides(int polygonSides) {
         this.polygonSides = polygonSides;
         polygonTotalPoints = polygonSides * 2;
+        runSetup();
     }
 
-    public void loadPixelReader() {
-        Image image = new Image("file:mona.png");
+    public void loadImageAndPixelReader(String imageFile) {
+        Image image = new Image(imageFile);
+        imageHeight = (int) image.getHeight();
+        imageWidth = (int) image.getWidth();
+        numberOfPixels = imageHeight * imageWidth;
         pixelReaderOriginalImage = image.getPixelReader();
+    }
+
+    public void runSetup() {
+        previousAverageDifference = 3;
+        addPolygons();
     }
 
     public void start() {
@@ -83,8 +92,10 @@ public class GeneratedImagePane2 extends Pane {
     }
 
     public void addPolygons() {
+        getChildren().clear();
         for (int i = 0; i < numberOfPolygons; i++)
-            children.add(getPolygon());
+            getChildren().add(getPolygon());
+        System.out.println("Added " + numberOfPolygons + " polygons");
     }
 
     public Polygon getPolygon() {
@@ -92,8 +103,8 @@ public class GeneratedImagePane2 extends Pane {
         ObservableList<Double> polygonPoints = polygon.getPoints();
 
         for (int i = 0; i < polygonSides; i++) {
-            double x = random.nextDouble() * 201;
-            double y = random.nextDouble() * 201;
+            double x = random.nextDouble() * imageWidth;
+            double y = random.nextDouble() * imageHeight;
             polygonPoints.add(x);
             polygonPoints.add(y);
         }
@@ -104,7 +115,7 @@ public class GeneratedImagePane2 extends Pane {
     }
 
     public void mutate() {
-        Polygon randomPolygon = (Polygon) children.get(random.nextInt(numberOfPolygons));
+        Polygon randomPolygon = (Polygon) getChildren().get(random.nextInt(numberOfPolygons));
         ObservableList<Double> originalPoints = null;
 
         Double[] originalPointsCopy = null;
@@ -150,7 +161,8 @@ public class GeneratedImagePane2 extends Pane {
     public void mutatePoint(ObservableList<Double> originalPoints) {
         int randomPointIndex = random.nextInt(polygonTotalPoints);
         originalPoints.remove(randomPointIndex);
-        originalPoints.add(randomPointIndex, random.nextDouble() * 201);
+        double randomPoint = randomPointIndex % 2 == 0 ? random.nextDouble() * imageWidth : random.nextDouble() * imageHeight; // If the coordinate index is divisible by 2 it must be an x coordinate. Otherwise, it is a y coordinate.
+        originalPoints.add(randomPointIndex, randomPoint);
     }
 
     public void mutateColor(Polygon randomPolygon, Color originalColor) {
@@ -181,13 +193,11 @@ public class GeneratedImagePane2 extends Pane {
 
         double totalDifference = 0;
 
-        for (int y = 0; y < 200; y++) {
-            for (int x = 0; x < 200; x++) {
+        for (int y = 0; y < imageHeight; y++) {
+            for (int x = 0; x < imageWidth; x++) {
                 Color color1 = pixelReaderOriginalImage.getColor(x, y);
                 Color color2 = pixelReaderGeneratedImage.getColor(x, y);
-
-                // https://en.wikipedia.org/wiki/Color_difference
-                double difference = Math.pow(color2.getRed() - color1.getRed(), 2) + Math.pow(color2.getGreen() - color1.getGreen(), 2) + Math.pow(color2.getBlue() - color1.getBlue(), 2);
+                double difference = Math.pow(color2.getRed() - color1.getRed(), 2) + Math.pow(color2.getGreen() - color1.getGreen(), 2) + Math.pow(color2.getBlue() - color1.getBlue(), 2); // https://en.wikipedia.org/wiki/Color_difference
                 totalDifference += difference;
             }
         }

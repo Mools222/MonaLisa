@@ -5,7 +5,6 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.collections.ObservableList;
 import javafx.embed.swing.SwingFXUtils;
-import javafx.scene.Node;
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelReader;
 import javafx.scene.image.WritableImage;
@@ -22,20 +21,21 @@ import java.util.Random;
 
 public class GeneratedImagePane extends Pane {
     private PixelReader pixelReaderOriginalImage;
-    private int numberOfPixels = 200 * 200; // mona.png is 200 * 200 pixels
+    private int imageWidth;
+    private int imageHeight;
+    private int numberOfPixels;
     private double previousAverageDifference = 3; // R, G & B each have a value between 0 and 1. Therefore the max difference is 3. This can be tested by comparing black (R, G & B = 0) and white (R, G & B = 1)
     private Timeline timeline;
-    private Rectangle clip = new Rectangle(200, 200);
-    private Random random = new Random();
+    private final Rectangle clip;
+    private final Random random = new Random();
     private int tries, improvements;
-    private ObservableList<Node> children = getChildren();
     private byte shapeId;
 
-    public GeneratedImagePane() {
-        setPrefWidth(200);
-        setPrefHeight(200);
-
-        loadPixelReader();
+    public GeneratedImagePane(String imageFile) {
+        loadImageAndPixelReader(imageFile);
+        clip = new Rectangle(imageWidth, imageHeight);
+        setPrefWidth(imageWidth);
+        setPrefHeight(imageHeight);
 
         timeline = new Timeline(new KeyFrame(Duration.millis(5), event -> attemptToImprove()));
         timeline.setCycleCount(Timeline.INDEFINITE);
@@ -45,8 +45,11 @@ public class GeneratedImagePane extends Pane {
         this.shapeId = shapeId;
     }
 
-    public void loadPixelReader() {
-        Image image = new Image("file:mona.png");
+    public void loadImageAndPixelReader(String imageFile) {
+        Image image = new Image(imageFile);
+        imageHeight = (int) image.getHeight();
+        imageWidth = (int) image.getWidth();
+        numberOfPixels = imageHeight * imageWidth;
         pixelReaderOriginalImage = image.getPixelReader();
     }
 
@@ -113,32 +116,32 @@ public class GeneratedImagePane extends Pane {
 
     public void addCircle() {
         Color color = new Color(random.nextDouble(), random.nextDouble(), random.nextDouble(), random.nextDouble());
-        double x = random.nextDouble() * 201;
-        double y = random.nextDouble() * 201;
-        double radius = random.nextDouble() * 21;
-        children.add(new Circle(x, y, radius, color));
+        double x = random.nextDouble() * imageWidth;
+        double y = random.nextDouble() * imageHeight;
+        double radius = random.nextDouble() * Math.max(imageHeight, imageWidth);
+        getChildren().add(new Circle(x, y, radius, color));
     }
 
     public void addEllipse() {
         Color color = new Color(random.nextDouble(), random.nextDouble(), random.nextDouble(), random.nextDouble());
-        double x = random.nextDouble() * 201;
-        double y = random.nextDouble() * 201;
-        double radiusX = random.nextDouble() * 201;
-        double radiusY = random.nextDouble() * 201;
+        double x = random.nextDouble() * imageWidth;
+        double y = random.nextDouble() * imageHeight;
+        double radiusX = random.nextDouble() * imageWidth;
+        double radiusY = random.nextDouble() * imageHeight;
         Ellipse ellipse = new Ellipse(x, y, radiusX, radiusY);
         ellipse.setFill(color);
-        children.add(ellipse);
+        getChildren().add(ellipse);
     }
 
     public void addRectangle() {
         Color color = new Color(random.nextDouble(), random.nextDouble(), random.nextDouble(), random.nextDouble());
-        double x = random.nextDouble() * 201;
-        double y = random.nextDouble() * 201;
-        double width = random.nextDouble() * 201;
-        double height = random.nextDouble() * 201;
+        double x = random.nextDouble() * imageWidth;
+        double y = random.nextDouble() * imageHeight;
+        double width = random.nextDouble() * imageWidth;
+        double height = random.nextDouble() * imageHeight;
         Rectangle rectangle = new Rectangle(x, y, width, height);
         rectangle.setFill(color);
-        children.add(rectangle);
+        getChildren().add(rectangle);
     }
 
     public void addPolygon(int sides) {
@@ -146,8 +149,8 @@ public class GeneratedImagePane extends Pane {
         ObservableList<Double> polygonPoints = polygon.getPoints();
 
         for (int i = 0; i < sides; i++) {
-            double x = random.nextDouble() * 201;
-            double y = random.nextDouble() * 201;
+            double x = random.nextDouble() * imageWidth;
+            double y = random.nextDouble() * imageHeight;
             polygonPoints.add(x);
             polygonPoints.add(y);
         }
@@ -155,25 +158,25 @@ public class GeneratedImagePane extends Pane {
         Color color = new Color(random.nextDouble(), random.nextDouble(), random.nextDouble(), random.nextDouble());
         polygon.setFill(color);
 
-        children.add(polygon);
+        getChildren().add(polygon);
     }
 
     public void addLine() {
-        double x1 = random.nextDouble() * 201;
-        double y1 = random.nextDouble() * 201;
-        double x2 = random.nextDouble() * 201;
-        double y2 = random.nextDouble() * 201;
+        double x1 = random.nextDouble() * imageWidth;
+        double y1 = random.nextDouble() * imageHeight;
+        double x2 = random.nextDouble() * imageWidth;
+        double y2 = random.nextDouble() * imageHeight;
 
         Line line = new Line(x1, y1, x2, y2);
 
         Color color = new Color(random.nextDouble(), random.nextDouble(), random.nextDouble(), random.nextDouble());
         line.setStroke(color);
 
-        children.add(line);
+        getChildren().add(line);
     }
 
     public void removeShape() {
-        children.remove(children.size() - 1);
+        getChildren().remove(getChildren().size() - 1);
     }
 
     public void attemptToImprove() {
@@ -197,8 +200,8 @@ public class GeneratedImagePane extends Pane {
 
         double totalDifference = 0;
 
-        for (int y = 0; y < 200; y++) {
-            for (int x = 0; x < 200; x++) {
+        for (int y = 0; y < imageHeight; y++) {
+            for (int x = 0; x < imageWidth; x++) {
                 Color color1 = pixelReaderOriginalImage.getColor(x, y);
                 Color color2 = pixelReaderGeneratedImage.getColor(x, y);
 
